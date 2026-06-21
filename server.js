@@ -89,6 +89,32 @@ app.post('/api/setup', async (req, res) => {
   }
 });
 
+
+// One-time seed endpoint for demo users - promotes user to given role
+// Only works if SETUP_SECRET env var matches
+app.post('/api/setup/promote', async (req, res) => {
+  const { pool: dbPool } = require('./config/db');
+  try {
+    const secret = process.env.SETUP_SECRET || 'aceas-setup-2024';
+    if (req.headers['x-setup-secret'] !== secret) {
+      return res.status(403).json({ error: 'Invalid setup secret' });
+    }
+    const { email, role } = req.body;
+    const validRoles = ['ai_developer', 'compliance_officer', 'system_admin'];
+    if (!email || !role || !validRoles.includes(role)) {
+      return res.status(400).json({ error: 'email and valid role required' });
+    }
+    const result = await dbPool.query(
+      'UPDATE users SET role = $1 WHERE email = $2 RETURNING id, email, role',
+      [role, email]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    res.json({ message: 'User role updated', user: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 404 handler
 app.use((req, res) => {
   if (req.path.startsWith('/api/')) {
