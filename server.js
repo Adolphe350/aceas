@@ -65,6 +65,30 @@ app.get('/developer/results', serveHtml('developer/results.html'));
 app.get('/officer/dashboard', serveHtml('officer/dashboard.html'));
 app.get('/admin/dashboard', serveHtml('admin/dashboard.html'));
 
+// One-time setup endpoint - creates first admin if none exists
+app.post('/api/setup', async (req, res) => {
+  const { pool: dbPool } = require('./config/db');
+  const bcryptLib = require('bcryptjs');
+  try {
+    const adminCheck = await dbPool.query("SELECT COUNT(*) FROM users WHERE role = 'system_admin'");
+    if (parseInt(adminCheck.rows[0].count) > 0) {
+      return res.status(403).json({ error: 'Setup already completed. Admin users exist.' });
+    }
+    const { full_name, email, password } = req.body;
+    if (!full_name || !email || !password) {
+      return res.status(400).json({ error: 'full_name, email, and password required' });
+    }
+    const hash = await bcryptLib.hash(password, 12);
+    const result = await dbPool.query(
+      "INSERT INTO users (full_name, email, password_hash, role) VALUES ($1, $2, $3, 'system_admin') RETURNING id, email, role",
+      [full_name, email, hash]
+    );
+    res.json({ message: 'Admin user created successfully', user: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 404 handler
 app.use((req, res) => {
   if (req.path.startsWith('/api/')) {
