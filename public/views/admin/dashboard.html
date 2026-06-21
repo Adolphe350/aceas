@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ACEAS — Admin Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="d-flex">
+    <nav class="sidebar">
+      <a href="#" class="sidebar-brand"><span>ACEAS</span></a>
+      <div class="sidebar-nav">
+        <a href="/views/admin/dashboard.html" class="active"><i class="bi bi-grid"></i> Dashboard</a>
+        <a href="/views/officer/dashboard.html"><i class="bi bi-person-badge"></i> Officer View</a>
+      </div>
+      <div class="sidebar-footer">
+        <div id="nav-user-name" class="fw-semibold text-white mb-1"></div>
+        <div id="nav-user-role" class="small opacity-75 mb-2"></div>
+        <a href="#" onclick="ACEAS.logout()" class="text-danger text-decoration-none small">
+          <i class="bi bi-box-arrow-left me-1"></i>Logout
+        </a>
+      </div>
+    </nav>
+
+    <div class="main-content w-100">
+      <div class="page-header">
+        <h1><i class="bi bi-shield-check me-2"></i>Admin Dashboard</h1>
+        <p>System administration and user management</p>
+      </div>
+
+      <!-- Tabs -->
+      <ul class="nav nav-tabs mb-4" id="adminTabs">
+        <li class="nav-item">
+          <a class="nav-link active" data-bs-toggle="tab" href="#tab-users">
+            <i class="bi bi-people me-1"></i>Users
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-bs-toggle="tab" href="#tab-projects">
+            <i class="bi bi-folder2-open me-1"></i>Projects
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-bs-toggle="tab" href="#tab-audit">
+            <i class="bi bi-journal-text me-1"></i>Audit Log
+          </a>
+        </li>
+      </ul>
+
+      <div class="tab-content">
+        <!-- Users Tab -->
+        <div class="tab-pane fade show active" id="tab-users">
+          <div class="card">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+              <span><i class="bi bi-people me-2"></i>User Management</span>
+              <button class="btn btn-primary btn-sm" onclick="openCreateUserModal()">
+                <i class="bi bi-person-plus me-1"></i>Add User
+              </button>
+            </div>
+            <div class="card-body p-0">
+              <div id="users-loading" class="text-center p-4">
+                <div class="spinner-border spinner-border-sm text-primary"></div> Loading...
+              </div>
+              <table class="table table-hover mb-0" id="users-table" style="display:none">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>MFA</th>
+                    <th>Joined</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="users-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Projects Tab -->
+        <div class="tab-pane fade" id="tab-projects">
+          <div class="card">
+            <div class="card-header py-3"><i class="bi bi-folder2-open me-2"></i>All Projects</div>
+            <div class="card-body p-0">
+              <div id="admin-projects-loading" class="text-center p-4">
+                <div class="spinner-border spinner-border-sm text-primary"></div> Loading...
+              </div>
+              <table class="table table-hover mb-0" id="admin-projects-table" style="display:none">
+                <thead>
+                  <tr>
+                    <th>Project</th>
+                    <th>Developer</th>
+                    <th>Status</th>
+                    <th>Risk</th>
+                    <th>Score</th>
+                    <th>Submitted</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-projects-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Audit Log Tab -->
+        <div class="tab-pane fade" id="tab-audit">
+          <div class="card">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+              <span><i class="bi bi-journal-text me-2"></i>Audit Log</span>
+              <button class="btn btn-outline-secondary btn-sm" onclick="loadAuditLog()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+              </button>
+            </div>
+            <div class="card-body p-0">
+              <div id="audit-loading" class="text-center p-4">
+                <div class="spinner-border spinner-border-sm text-primary"></div> Loading...
+              </div>
+              <table class="table table-hover table-sm mb-0" id="audit-table" style="display:none">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Entity</th>
+                    <th>IP</th>
+                  </tr>
+                </thead>
+                <tbody id="audit-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create User Modal -->
+  <div class="modal fade" id="createUserModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Create User</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="create-user-alert"></div>
+          <form id="create-user-form">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Full Name</label>
+              <input type="text" id="cu-name" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Email</label>
+              <input type="email" id="cu-email" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Password</label>
+              <input type="password" id="cu-password" class="form-control" minlength="8" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Role</label>
+              <select id="cu-role" class="form-select" required>
+                <option value="">Select role...</option>
+                <option value="ai_developer">AI Developer</option>
+                <option value="compliance_officer">Compliance Officer</option>
+                <option value="system_admin">System Admin</option>
+              </select>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="create-user-btn">
+            <i class="bi bi-person-plus me-1"></i>Create User
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit User Modal -->
+  <div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit User</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="edit-user-alert"></div>
+          <input type="hidden" id="eu-id">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Full Name</label>
+            <input type="text" id="eu-name" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Email</label>
+            <input type="email" id="eu-email" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Role</label>
+            <select id="eu-role" class="form-select" required>
+              <option value="ai_developer">AI Developer</option>
+              <option value="compliance_officer">Compliance Officer</option>
+              <option value="system_admin">System Admin</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Status</label>
+            <select id="eu-active" class="form-select">
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">New Password <span class="text-muted small">(leave blank to keep current)</span></label>
+            <input type="password" id="eu-password" class="form-control" minlength="8" placeholder="Optional">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="edit-user-btn">
+            <i class="bi bi-save me-1"></i>Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    const user = ACEAS.requireAuth(['system_admin']);
+    if (user) {
+      ACEAS.populateUserNav();
+      loadUsers();
+      loadAdminProjects();
+    }
+
+    // Load tabs on click
+    document.querySelector('[href="#tab-audit"]').addEventListener('click', loadAuditLog);
+    document.querySelector('[href="#tab-projects"]').addEventListener('click', loadAdminProjects);
+
+    async function loadUsers() {
+      try {
+        const data = await ACEAS.apiFetch('/admin/users');
+        document.getElementById('users-loading').style.display = 'none';
+        document.getElementById('users-table').style.display = '';
+
+        document.getElementById('users-tbody').innerHTML = data.users.map(u => `
+          <tr>
+            <td>
+              <div class="fw-semibold">${esc(u.full_name)}</div>
+              <div class="text-muted small">${esc(u.email)}</div>
+            </td>
+            <td><span class="badge bg-secondary">${ACEAS.roleDisplay(u.role)}</span></td>
+            <td>${u.is_active
+              ? '<span class="badge bg-success">Active</span>'
+              : '<span class="badge bg-secondary">Inactive</span>'}</td>
+            <td>${u.mfa_enabled
+              ? '<span class="badge bg-info text-dark">Enabled</span>'
+              : '<span class="badge bg-light text-dark">Disabled</span>'}</td>
+            <td class="text-muted small">${ACEAS.formatDate(u.created_at)}</td>
+            <td>
+              <div class="d-flex gap-1">
+                <button class="btn btn-sm btn-outline-primary" onclick="openEditModal(${JSON.stringify(u).replace(/"/g, '&quot;')})">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${u.id}, '${esc(u.full_name)}')">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        document.getElementById('users-loading').innerHTML = `<div class="alert alert-danger m-3 small">${err.message}</div>`;
+      }
+    }
+
+    async function loadAdminProjects() {
+      const loadingEl = document.getElementById('admin-projects-loading');
+      const tableEl = document.getElementById('admin-projects-table');
+      if (tableEl.style.display !== 'none') return; // already loaded
+
+      try {
+        const data = await ACEAS.apiFetch('/admin/projects');
+        loadingEl.style.display = 'none';
+        tableEl.style.display = '';
+
+        document.getElementById('admin-projects-tbody').innerHTML = data.projects.map(p => `
+          <tr>
+            <td>
+              <div class="fw-semibold">${esc(p.title)}</div>
+              <div class="text-muted small">${esc(p.ai_type || '—')}</div>
+            </td>
+            <td>
+              <div class="small">${esc(p.developer_name)}</div>
+            </td>
+            <td>${ACEAS.statusBadge(p.status)}</td>
+            <td>${p.risk_level ? ACEAS.riskBadge(p.risk_level) : '—'}</td>
+            <td>${p.overall_score ? `<strong style="color:${ACEAS.scoreColor(p.overall_score)}">${parseFloat(p.overall_score).toFixed(1)}%</strong>` : '—'}</td>
+            <td class="text-muted small">${ACEAS.formatDate(p.submitted_at)}</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        loadingEl.innerHTML = `<div class="alert alert-danger m-3 small">${err.message}</div>`;
+      }
+    }
+
+    async function loadAuditLog() {
+      const loadingEl = document.getElementById('audit-loading');
+      const tableEl = document.getElementById('audit-table');
+      loadingEl.style.display = '';
+      tableEl.style.display = 'none';
+
+      try {
+        const data = await ACEAS.apiFetch('/admin/audit-log?limit=200');
+        loadingEl.style.display = 'none';
+        tableEl.style.display = '';
+
+        document.getElementById('audit-tbody').innerHTML = data.logs.map(l => `
+          <tr>
+            <td class="text-muted small">${new Date(l.created_at).toLocaleString()}</td>
+            <td>
+              <div class="small">${esc(l.full_name || 'System')}</div>
+              <div class="text-muted" style="font-size:0.7rem">${esc(l.email || '')}</div>
+            </td>
+            <td><code class="small">${esc(l.action)}</code></td>
+            <td class="small text-muted">${esc(l.entity_type || '')} ${l.entity_id ? `#${l.entity_id}` : ''}</td>
+            <td class="text-muted small">${esc(l.ip_address || '—')}</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        loadingEl.innerHTML = `<div class="alert alert-danger m-3 small">${err.message}</div>`;
+      }
+    }
+
+    let createModal, editModal;
+
+    function openCreateUserModal() {
+      document.getElementById('create-user-form').reset();
+      document.getElementById('create-user-alert').innerHTML = '';
+      if (!createModal) createModal = new bootstrap.Modal(document.getElementById('createUserModal'));
+      createModal.show();
+    }
+
+    document.getElementById('create-user-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('create-user-btn');
+      const alertBox = document.getElementById('create-user-alert');
+      alertBox.innerHTML = '';
+
+      ACEAS.setLoading(btn, true, 'Creating...');
+      try {
+        await ACEAS.apiFetch('/admin/users', {
+          method: 'POST',
+          body: JSON.stringify({
+            full_name: document.getElementById('cu-name').value.trim(),
+            email: document.getElementById('cu-email').value.trim(),
+            password: document.getElementById('cu-password').value,
+            role: document.getElementById('cu-role').value,
+          }),
+        });
+        createModal.hide();
+        ACEAS.showToast('User created successfully!', 'success');
+        loadUsers();
+      } catch (err) {
+        alertBox.innerHTML = `<div class="alert alert-danger small">${err.message}</div>`;
+      } finally {
+        ACEAS.setLoading(btn, false);
+      }
+    });
+
+    function openEditModal(userData) {
+      document.getElementById('eu-id').value = userData.id;
+      document.getElementById('eu-name').value = userData.full_name;
+      document.getElementById('eu-email').value = userData.email;
+      document.getElementById('eu-role').value = userData.role;
+      document.getElementById('eu-active').value = String(userData.is_active);
+      document.getElementById('eu-password').value = '';
+      document.getElementById('edit-user-alert').innerHTML = '';
+      if (!editModal) editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
+      editModal.show();
+    }
+
+    document.getElementById('edit-user-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('edit-user-btn');
+      const alertBox = document.getElementById('edit-user-alert');
+      const userId = document.getElementById('eu-id').value;
+      alertBox.innerHTML = '';
+
+      const payload = {
+        full_name: document.getElementById('eu-name').value.trim(),
+        email: document.getElementById('eu-email').value.trim(),
+        role: document.getElementById('eu-role').value,
+        is_active: document.getElementById('eu-active').value === 'true',
+      };
+      const pwd = document.getElementById('eu-password').value;
+      if (pwd) payload.password = pwd;
+
+      ACEAS.setLoading(btn, true, 'Saving...');
+      try {
+        await ACEAS.apiFetch(`/admin/users/${userId}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        });
+        editModal.hide();
+        ACEAS.showToast('User updated!', 'success');
+        loadUsers();
+      } catch (err) {
+        alertBox.innerHTML = `<div class="alert alert-danger small">${err.message}</div>`;
+      } finally {
+        ACEAS.setLoading(btn, false);
+      }
+    });
+
+    async function deleteUser(userId, name) {
+      if (!confirm(`Delete user "${name}"? This cannot be undone.`)) return;
+      try {
+        await ACEAS.apiFetch(`/admin/users/${userId}`, { method: 'DELETE' });
+        ACEAS.showToast('User deleted.', 'success');
+        loadUsers();
+      } catch (err) {
+        ACEAS.showToast('Failed to delete: ' + err.message, 'danger');
+      }
+    }
+
+    function esc(str) {
+      const d = document.createElement('div');
+      d.textContent = str || '';
+      return d.innerHTML;
+    }
+  </script>
+</body>
+</html>

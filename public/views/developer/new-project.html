@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ACEAS — New Project</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="d-flex">
+    <nav class="sidebar">
+      <a href="#" class="sidebar-brand"><span>ACEAS</span></a>
+      <div class="sidebar-nav">
+        <a href="/views/developer/dashboard.html"><i class="bi bi-grid"></i> Dashboard</a>
+        <a href="/views/developer/new-project.html" class="active"><i class="bi bi-plus-circle"></i> New Project</a>
+      </div>
+      <div class="sidebar-footer">
+        <div id="nav-user-name" class="fw-semibold text-white mb-1"></div>
+        <div id="nav-user-role" class="small opacity-75 mb-2"></div>
+        <a href="#" onclick="ACEAS.logout()" class="text-danger text-decoration-none small">
+          <i class="bi bi-box-arrow-left me-1"></i>Logout
+        </a>
+      </div>
+    </nav>
+
+    <div class="main-content w-100">
+      <div class="page-header">
+        <h1><i class="bi bi-plus-circle me-2"></i>New Project</h1>
+        <p>Register your AI system for compliance assessment</p>
+      </div>
+
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <div class="card">
+            <div class="card-header py-3">
+              <i class="bi bi-robot me-2"></i>AI System Details
+            </div>
+            <div class="card-body p-4">
+              <div id="alert-container"></div>
+
+              <form id="project-form">
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Project Title <span class="text-danger">*</span></label>
+                  <input type="text" id="title" class="form-control" placeholder="e.g., Customer Credit Scoring AI" required>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">AI Type</label>
+                  <select id="ai_type" class="form-select">
+                    <option value="">Select AI type...</option>
+                    <option value="Machine Learning Classification">Machine Learning — Classification</option>
+                    <option value="Machine Learning Regression">Machine Learning — Regression</option>
+                    <option value="Natural Language Processing">Natural Language Processing (NLP)</option>
+                    <option value="Computer Vision">Computer Vision</option>
+                    <option value="Recommendation System">Recommendation System</option>
+                    <option value="Generative AI">Generative AI</option>
+                    <option value="Reinforcement Learning">Reinforcement Learning</option>
+                    <option value="Expert System">Expert System / Rules-Based</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Description</label>
+                  <textarea id="description" class="form-control" rows="3"
+                    placeholder="Briefly describe what this AI system does..."></textarea>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Purpose & Use Case</label>
+                  <textarea id="purpose" class="form-control" rows="3"
+                    placeholder="What problem does this system solve? Who are the end users? What decisions does it assist with?"></textarea>
+                </div>
+
+                <div class="mb-4">
+                  <label class="form-label fw-semibold">Dataset Information</label>
+                  <textarea id="dataset_info" class="form-control" rows="3"
+                    placeholder="Describe the training data: sources, size, type, whether it includes personal data..."></textarea>
+                </div>
+
+                <div class="alert alert-info small">
+                  <i class="bi bi-info-circle me-2"></i>
+                  After creating the project, you will complete a 20-question ethics and compliance questionnaire.
+                </div>
+
+                <div class="d-flex gap-2">
+                  <button type="submit" class="btn btn-primary fw-semibold" id="submit-btn">
+                    <i class="bi bi-arrow-right me-2"></i>Create & Continue to Assessment
+                  </button>
+                  <a href="/views/developer/dashboard.html" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    const user = ACEAS.requireAuth(['ai_developer']);
+    if (user) ACEAS.populateUserNav();
+
+    document.getElementById('project-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      const alertBox = document.getElementById('alert-container');
+      alertBox.innerHTML = '';
+
+      ACEAS.setLoading(btn, true, 'Creating project...');
+
+      try {
+        const data = await ACEAS.apiFetch('/developer/projects', {
+          method: 'POST',
+          body: JSON.stringify({
+            title: document.getElementById('title').value.trim(),
+            ai_type: document.getElementById('ai_type').value,
+            description: document.getElementById('description').value.trim(),
+            purpose: document.getElementById('purpose').value.trim(),
+            dataset_info: document.getElementById('dataset_info').value.trim(),
+          }),
+        });
+
+        ACEAS.showToast('Project created! Loading questionnaire...', 'success');
+        setTimeout(() => {
+          window.location.href = `/views/developer/questionnaire.html?id=${data.project.id}`;
+        }, 800);
+      } catch (err) {
+        alertBox.innerHTML = `<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>${err.message}</div>`;
+        ACEAS.setLoading(btn, false);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ACEAS — Compliance Officer Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="d-flex">
+    <nav class="sidebar">
+      <a href="#" class="sidebar-brand"><span>ACEAS</span></a>
+      <div class="sidebar-nav">
+        <a href="/views/officer/dashboard.html" class="active"><i class="bi bi-grid"></i> Dashboard</a>
+      </div>
+      <div class="sidebar-footer">
+        <div id="nav-user-name" class="fw-semibold text-white mb-1"></div>
+        <div id="nav-user-role" class="small opacity-75 mb-2"></div>
+        <a href="#" onclick="ACEAS.logout()" class="text-danger text-decoration-none small">
+          <i class="bi bi-box-arrow-left me-1"></i>Logout
+        </a>
+      </div>
+    </nav>
+
+    <div class="main-content w-100">
+      <div class="page-header">
+        <h1><i class="bi bi-person-badge me-2"></i>Compliance Officer</h1>
+        <p>Review and assess AI system submissions</p>
+      </div>
+
+      <!-- Stats -->
+      <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+          <div class="stat-card"><div class="stat-number" id="stat-total">—</div><div class="stat-label">Total Submitted</div></div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="stat-card"><div class="stat-number text-primary" id="stat-under-review">—</div><div class="stat-label">Awaiting Review</div></div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="stat-card"><div class="stat-number text-success" id="stat-approved">—</div><div class="stat-label">Approved</div></div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="stat-card"><div class="stat-number text-danger" id="stat-rejected">—</div><div class="stat-label">Rejected</div></div>
+        </div>
+      </div>
+
+      <!-- Projects -->
+      <div class="card">
+        <div class="card-header py-3"><i class="bi bi-folder2-open me-2"></i>All Submitted Projects</div>
+        <div class="card-body p-0">
+          <div id="loading-state" class="text-center p-5 text-muted">
+            <div class="spinner-border text-primary mb-3"></div>
+            <div>Loading projects...</div>
+          </div>
+          <div id="empty-state" class="text-center p-5 text-muted" style="display:none">
+            <i class="bi bi-inbox" style="font-size:3rem;"></i>
+            <h5 class="mt-3">No projects submitted yet</h5>
+          </div>
+          <div id="projects-table-container" style="display:none">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Project</th>
+                  <th>Developer</th>
+                  <th>AI Type</th>
+                  <th>Status</th>
+                  <th>Risk Level</th>
+                  <th>Score</th>
+                  <th>Submitted</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="projects-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Review Modal -->
+  <div class="modal fade" id="reviewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-clipboard-check me-2"></i>Review Project</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="modal-project-info" class="mb-4"></div>
+          <div id="modal-assessment-info" class="mb-4"></div>
+          <form id="review-form">
+            <input type="hidden" id="review-project-id">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Decision <span class="text-danger">*</span></label>
+              <select id="review-decision" class="form-select" required>
+                <option value="">Select decision...</option>
+                <option value="approved">✅ Approve</option>
+                <option value="changes_requested">⚠️ Request Changes</option>
+                <option value="rejected">❌ Reject</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Comments</label>
+              <textarea id="review-comments" class="form-control" rows="4"
+                placeholder="Provide feedback to the developer..."></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary fw-semibold" id="submit-review-btn">
+            <i class="bi bi-check-circle me-2"></i>Submit Review
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    const user = ACEAS.requireAuth(['compliance_officer', 'system_admin']);
+    if (user) {
+      ACEAS.populateUserNav();
+      loadProjects();
+    }
+
+    let modal;
+
+    async function loadProjects() {
+      try {
+        const data = await ACEAS.apiFetch('/officer/projects');
+        const projects = data.projects || [];
+
+        document.getElementById('loading-state').style.display = 'none';
+
+        document.getElementById('stat-total').textContent = projects.length;
+        document.getElementById('stat-under-review').textContent = projects.filter(p => p.status === 'under_review').length;
+        document.getElementById('stat-approved').textContent = projects.filter(p => p.status === 'approved').length;
+        document.getElementById('stat-rejected').textContent = projects.filter(p => p.status === 'rejected').length;
+
+        if (projects.length === 0) {
+          document.getElementById('empty-state').style.display = '';
+          return;
+        }
+
+        document.getElementById('projects-table-container').style.display = '';
+        const tbody = document.getElementById('projects-tbody');
+        tbody.innerHTML = projects.map(p => `
+          <tr>
+            <td>
+              <div class="fw-semibold">${esc(p.title)}</div>
+              <div class="text-muted small">${esc((p.description || '').substring(0, 50))}${p.description && p.description.length > 50 ? '…' : ''}</div>
+            </td>
+            <td>
+              <div class="small">${esc(p.developer_name)}</div>
+              <div class="text-muted" style="font-size:0.75rem">${esc(p.developer_email)}</div>
+            </td>
+            <td class="small text-muted">${esc(p.ai_type || '—')}</td>
+            <td>${ACEAS.statusBadge(p.status)}</td>
+            <td>${p.risk_level ? ACEAS.riskBadge(p.risk_level) : '<span class="text-muted small">—</span>'}</td>
+            <td>${p.overall_score ? `<strong style="color:${ACEAS.scoreColor(p.overall_score)}">${parseFloat(p.overall_score).toFixed(1)}%</strong>` : '<span class="text-muted small">No assessment</span>'}</td>
+            <td class="text-muted small">${ACEAS.formatDate(p.submitted_at)}</td>
+            <td>
+              <button class="btn btn-sm btn-primary" onclick="openReviewModal(${p.id})"
+                ${!p.overall_score ? 'disabled title="No assessment yet"' : ''}>
+                <i class="bi bi-search"></i> Review
+              </button>
+            </td>
+          </tr>
+        `).join('');
+
+        modal = new bootstrap.Modal(document.getElementById('reviewModal'));
+      } catch (err) {
+        document.getElementById('loading-state').innerHTML = `
+          <div class="alert alert-danger m-3">Failed to load projects: ${err.message}</div>`;
+      }
+    }
+
+    async function openReviewModal(projectId) {
+      document.getElementById('review-project-id').value = projectId;
+      document.getElementById('review-decision').value = '';
+      document.getElementById('review-comments').value = '';
+      document.getElementById('modal-project-info').innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm"></div> Loading...</div>';
+      document.getElementById('modal-assessment-info').innerHTML = '';
+
+      modal.show();
+
+      try {
+        const data = await ACEAS.apiFetch(`/officer/projects/${projectId}`);
+        const { project, assessment } = data;
+
+        document.getElementById('modal-project-info').innerHTML = `
+          <div class="card bg-light border-0">
+            <div class="card-body">
+              <h6 class="fw-bold">${esc(project.title)}</h6>
+              <div class="row small">
+                <div class="col-6"><span class="text-muted">Developer:</span> ${esc(project.developer_name)}</div>
+                <div class="col-6"><span class="text-muted">AI Type:</span> ${esc(project.ai_type || 'N/A')}</div>
+                <div class="col-12 mt-1"><span class="text-muted">Description:</span> ${esc(project.description || 'N/A')}</div>
+                <div class="col-12 mt-1"><span class="text-muted">Purpose:</span> ${esc(project.purpose || 'N/A')}</div>
+              </div>
+            </div>
+          </div>`;
+
+        if (assessment) {
+          document.getElementById('modal-assessment-info').innerHTML = `
+            <h6 class="fw-bold mt-3">Assessment Scores</h6>
+            <div class="row g-2">
+              ${[
+                ['Privacy', assessment.privacy_score],
+                ['Fairness', assessment.fairness_score],
+                ['Security', assessment.security_score],
+                ['Transparency', assessment.transparency_score],
+                ['Accountability', assessment.accountability_score],
+              ].map(([name, score]) => {
+                const s = parseFloat(score);
+                const color = ACEAS.scoreColor(s);
+                return `<div class="col-6 col-md-4">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="small">${name}</span>
+                    <strong style="color:${color}">${s.toFixed(1)}%</strong>
+                  </div>
+                  <div class="progress progress-sm mt-1">
+                    <div class="progress-bar" style="width:${s}%;background:${color}"></div>
+                  </div>
+                </div>`;
+              }).join('')}
+              <div class="col-6 col-md-4">
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="small fw-bold">Overall</span>
+                  <strong style="color:${ACEAS.scoreColor(parseFloat(assessment.overall_score))}">${parseFloat(assessment.overall_score).toFixed(1)}%</strong>
+                </div>
+                <div class="mt-1">${ACEAS.riskBadge(assessment.risk_level)}</div>
+              </div>
+            </div>`;
+        }
+      } catch (err) {
+        document.getElementById('modal-project-info').innerHTML = `<div class="alert alert-danger small">Failed to load project details: ${err.message}</div>`;
+      }
+    }
+
+    document.getElementById('submit-review-btn').addEventListener('click', async () => {
+      const projectId = document.getElementById('review-project-id').value;
+      const decision = document.getElementById('review-decision').value;
+      const comments = document.getElementById('review-comments').value.trim();
+      const btn = document.getElementById('submit-review-btn');
+
+      if (!decision) {
+        ACEAS.showToast('Please select a decision.', 'warning');
+        return;
+      }
+
+      ACEAS.setLoading(btn, true, 'Submitting...');
+
+      try {
+        await ACEAS.apiFetch(`/officer/projects/${projectId}/review`, {
+          method: 'POST',
+          body: JSON.stringify({ decision, comments }),
+        });
+
+        modal.hide();
+        ACEAS.showToast('Review submitted successfully!', 'success');
+        loadProjects();
+      } catch (err) {
+        ACEAS.showToast('Failed to submit review: ' + err.message, 'danger');
+      } finally {
+        ACEAS.setLoading(btn, false);
+      }
+    });
+
+    function esc(str) {
+      const d = document.createElement('div');
+      d.textContent = str || '';
+      return d.innerHTML;
+    }
+  </script>
+</body>
+</html>

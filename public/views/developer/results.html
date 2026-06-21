@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ACEAS — Assessment Results</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="d-flex">
+    <nav class="sidebar">
+      <a href="#" class="sidebar-brand"><span>ACEAS</span></a>
+      <div class="sidebar-nav">
+        <a href="/views/developer/dashboard.html"><i class="bi bi-grid"></i> Dashboard</a>
+        <a href="/views/developer/new-project.html"><i class="bi bi-plus-circle"></i> New Project</a>
+      </div>
+      <div class="sidebar-footer">
+        <div id="nav-user-name" class="fw-semibold text-white mb-1"></div>
+        <div id="nav-user-role" class="small opacity-75 mb-2"></div>
+        <a href="#" onclick="ACEAS.logout()" class="text-danger text-decoration-none small">
+          <i class="bi bi-box-arrow-left me-1"></i>Logout
+        </a>
+      </div>
+    </nav>
+
+    <div class="main-content w-100">
+      <div id="loading-state" class="text-center p-5">
+        <div class="spinner-border text-primary mb-3"></div>
+        <div>Loading results...</div>
+      </div>
+
+      <div id="results-content" style="display:none">
+        <!-- Header -->
+        <div class="page-header d-flex justify-content-between align-items-start">
+          <div>
+            <h1><i class="bi bi-bar-chart me-2"></i>Assessment Results</h1>
+            <p id="project-title" class="text-muted"></p>
+          </div>
+          <div class="d-flex gap-2">
+            <a href="#" id="download-pdf" class="btn btn-outline-danger">
+              <i class="bi bi-file-earmark-pdf me-1"></i>Download PDF
+            </a>
+            <a href="/views/developer/dashboard.html" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left me-1"></i>Back
+            </a>
+          </div>
+        </div>
+
+        <!-- Overall Score -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="card h-100">
+              <div class="card-body text-center p-4">
+                <div class="small text-muted mb-2 fw-semibold text-uppercase">Overall Score</div>
+                <div id="overall-score" class="display-3 fw-bold"></div>
+                <div class="mt-2" id="risk-badge-container"></div>
+                <div class="text-muted small mt-2" id="assessed-at"></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-8">
+            <div class="card h-100">
+              <div class="card-body">
+                <h6 class="fw-bold mb-3">Compliance Radar Chart</h6>
+                <div class="chart-container">
+                  <canvas id="radarChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Domain Scores -->
+        <div class="card mb-4">
+          <div class="card-header py-3"><i class="bi bi-list-check me-2"></i>Domain Scores</div>
+          <div class="card-body">
+            <div class="row g-3" id="domain-scores"></div>
+          </div>
+        </div>
+
+        <!-- AI Recommendations -->
+        <div class="card mb-4">
+          <div class="card-header py-3"><i class="bi bi-lightbulb me-2"></i>AI-Powered Recommendations</div>
+          <div class="card-body">
+            <div id="ai-recommendations" class="text-muted" style="white-space: pre-wrap; line-height: 1.7;"></div>
+          </div>
+        </div>
+
+        <!-- Officer Review -->
+        <div id="review-card" class="card mb-4" style="display:none">
+          <div class="card-header py-3"><i class="bi bi-person-badge me-2"></i>Officer Review</div>
+          <div class="card-body">
+            <div id="review-content"></div>
+          </div>
+        </div>
+
+        <!-- Q&A Summary -->
+        <div class="card mb-5">
+          <div class="card-header py-3"><i class="bi bi-clipboard me-2"></i>Questionnaire Summary</div>
+          <div class="card-body p-0">
+            <table class="table table-sm mb-0">
+              <thead><tr><th>#</th><th>Domain</th><th>Question</th><th>Answer</th></tr></thead>
+              <tbody id="qa-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    const user = ACEAS.requireAuth(['ai_developer']);
+    if (!user) throw new Error('Not authenticated');
+    ACEAS.populateUserNav();
+
+    const params = new URLSearchParams(window.location.search);
+    const projectId = params.get('id');
+    if (!projectId) window.location.href = '/views/developer/dashboard.html';
+
+    const QUESTIONS = [
+      { num: 1, domain: 'Privacy', text: 'Does the AI system collect or process personal data?' },
+      { num: 2, domain: 'Privacy', text: 'Is user consent obtained before data collection?' },
+      { num: 3, domain: 'Privacy', text: 'Is the data anonymized or encrypted during storage?' },
+      { num: 4, domain: 'Privacy', text: 'Does the system comply with data protection regulations?' },
+      { num: 5, domain: 'Fairness', text: 'Has the model been tested for bias across demographic groups?' },
+      { num: 6, domain: 'Fairness', text: 'Does the system make decisions that affect human lives?' },
+      { num: 7, domain: 'Fairness', text: 'Are there mechanisms to appeal or override AI decisions?' },
+      { num: 8, domain: 'Fairness', text: 'Was the training data diverse and representative?' },
+      { num: 9, domain: 'Security', text: 'Has a cybersecurity risk assessment been conducted?' },
+      { num: 10, domain: 'Security', text: 'Are there access controls limiting who can use the system?' },
+      { num: 11, domain: 'Security', text: 'Is the system protected against adversarial attacks?' },
+      { num: 12, domain: 'Security', text: 'Are there incident response procedures if the system is compromised?' },
+      { num: 13, domain: 'Transparency', text: 'Is model documentation publicly available?' },
+      { num: 14, domain: 'Transparency', text: 'Can the AI explain why it made a specific decision?' },
+      { num: 15, domain: 'Transparency', text: 'Are users informed that they are interacting with an AI?' },
+      { num: 16, domain: 'Transparency', text: 'Is there a model card or data sheet for this system?' },
+      { num: 17, domain: 'Accountability', text: 'Is there a designated person responsible for AI outcomes?' },
+      { num: 18, domain: 'Accountability', text: 'Are audit logs maintained for all AI decisions?' },
+      { num: 19, domain: 'Accountability', text: 'Is there a process for reporting AI-related harms?' },
+      { num: 20, domain: 'Accountability', text: 'Has the system undergone independent review before deployment?' },
+    ];
+
+    async function loadResults() {
+      try {
+        const data = await ACEAS.apiFetch(`/developer/projects/${projectId}/results`);
+        const { project, assessment, review } = data;
+
+        document.getElementById('loading-state').style.display = 'none';
+        document.getElementById('results-content').style.display = '';
+
+        document.getElementById('project-title').textContent = project.title;
+        document.title = `ACEAS — ${project.title} Results`;
+
+        // PDF link
+        document.getElementById('download-pdf').href = `/api/developer/projects/${projectId}/report`;
+        document.getElementById('download-pdf').onclick = (e) => {
+          e.preventDefault();
+          downloadPDF();
+        };
+
+        // Overall score
+        const overall = parseFloat(assessment.overall_score);
+        const scoreEl = document.getElementById('overall-score');
+        scoreEl.textContent = `${overall.toFixed(1)}%`;
+        scoreEl.style.color = ACEAS.scoreColor(overall);
+
+        document.getElementById('risk-badge-container').innerHTML = ACEAS.riskBadge(assessment.risk_level);
+        document.getElementById('assessed-at').textContent = `Assessed: ${ACEAS.formatDate(assessment.assessed_at)}`;
+
+        // Radar Chart
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'radar',
+          data: {
+            labels: ['Privacy', 'Fairness', 'Security', 'Transparency', 'Accountability'],
+            datasets: [{
+              label: 'Compliance Score (%)',
+              data: [
+                parseFloat(assessment.privacy_score),
+                parseFloat(assessment.fairness_score),
+                parseFloat(assessment.security_score),
+                parseFloat(assessment.transparency_score),
+                parseFloat(assessment.accountability_score),
+              ],
+              backgroundColor: 'rgba(13, 110, 253, 0.15)',
+              borderColor: 'rgba(13, 110, 253, 0.8)',
+              borderWidth: 2,
+              pointBackgroundColor: '#0d6efd',
+              pointRadius: 5,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+              r: {
+                beginAtZero: true,
+                max: 100,
+                ticks: { stepSize: 25 },
+              },
+            },
+            plugins: {
+              legend: { display: false },
+            },
+          },
+        });
+
+        // Domain scores
+        const domains = [
+          { name: 'Privacy', score: assessment.privacy_score, weight: '25%', icon: 'bi-shield-lock' },
+          { name: 'Fairness', score: assessment.fairness_score, weight: '25%', icon: 'bi-balance-scale' },
+          { name: 'Security', score: assessment.security_score, weight: '20%', icon: 'bi-lock-fill' },
+          { name: 'Transparency', score: assessment.transparency_score, weight: '15%', icon: 'bi-eye' },
+          { name: 'Accountability', score: assessment.accountability_score, weight: '15%', icon: 'bi-person-check' },
+        ];
+
+        document.getElementById('domain-scores').innerHTML = domains.map(d => {
+          const s = parseFloat(d.score);
+          const color = ACEAS.scoreColor(s);
+          return `
+            <div class="col-md-6 col-lg-4">
+              <div class="p-3 bg-light rounded">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <div class="fw-semibold"><i class="bi ${d.icon} me-2"></i>${d.name}</div>
+                  <div class="fw-bold" style="color:${color}">${s.toFixed(1)}%</div>
+                </div>
+                <div class="score-bar">
+                  <div class="score-bar-fill" style="width:${s}%; background:${color}"></div>
+                </div>
+                <div class="text-muted small mt-1">Weight: ${d.weight}</div>
+              </div>
+            </div>`;
+        }).join('');
+
+        // AI Recommendations
+        const recs = assessment.ai_recommendations || 'No recommendations available.';
+        document.getElementById('ai-recommendations').textContent = recs;
+
+        // Review
+        if (review) {
+          document.getElementById('review-card').style.display = '';
+          const decisionColor = review.decision === 'approved' ? 'success'
+            : review.decision === 'rejected' ? 'danger' : 'warning';
+          document.getElementById('review-content').innerHTML = `
+            <div class="alert alert-${decisionColor}">
+              <strong>Decision:</strong> ${review.decision.replace('_', ' ').toUpperCase()}<br>
+              <strong>Reviewed by:</strong> ${review.officer_name || 'Compliance Officer'}<br>
+              <strong>Date:</strong> ${ACEAS.formatDate(review.reviewed_at)}
+              ${review.comments ? `<br><strong>Comments:</strong> ${review.comments}` : ''}
+            </div>`;
+        }
+
+        // Q&A Summary
+        document.getElementById('qa-tbody').innerHTML = QUESTIONS.map(q => {
+          const answer = assessment[`q${q.num}`];
+          const answerHtml = answer === true
+            ? '<span class="text-success fw-bold">✓ Yes</span>'
+            : '<span class="text-danger fw-bold">✗ No</span>';
+          return `<tr>
+            <td class="text-muted">${q.num}</td>
+            <td><span class="badge bg-secondary">${q.domain}</span></td>
+            <td class="small">${q.text}</td>
+            <td>${answerHtml}</td>
+          </tr>`;
+        }).join('');
+
+      } catch (err) {
+        document.getElementById('loading-state').innerHTML = `
+          <div class="alert alert-danger m-3">Failed to load results: ${err.message}</div>`;
+      }
+    }
+
+    async function downloadPDF() {
+      try {
+        const token = ACEAS.getToken();
+        const res = await fetch(`/api/developer/projects/${projectId}/report`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error('Failed to generate report');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `aceas-report-${projectId}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        ACEAS.showToast('Failed to download report: ' + err.message, 'danger');
+      }
+    }
+
+    loadResults();
+  </script>
+</body>
+</html>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ACEAS — Assessment Questionnaire</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="d-flex">
+    <nav class="sidebar">
+      <a href="#" class="sidebar-brand"><span>ACEAS</span></a>
+      <div class="sidebar-nav">
+        <a href="/views/developer/dashboard.html"><i class="bi bi-grid"></i> Dashboard</a>
+        <a href="/views/developer/new-project.html"><i class="bi bi-plus-circle"></i> New Project</a>
+      </div>
+      <div class="sidebar-footer">
+        <div id="nav-user-name" class="fw-semibold text-white mb-1"></div>
+        <div id="nav-user-role" class="small opacity-75 mb-2"></div>
+        <a href="#" onclick="ACEAS.logout()" class="text-danger text-decoration-none small">
+          <i class="bi bi-box-arrow-left me-1"></i>Logout
+        </a>
+      </div>
+    </nav>
+
+    <div class="main-content w-100">
+      <div class="page-header">
+        <h1><i class="bi bi-clipboard-check me-2"></i>Ethics & Compliance Assessment</h1>
+        <p id="project-title-display">Answer all 20 questions about your AI system</p>
+      </div>
+
+      <!-- Progress -->
+      <div class="card mb-4">
+        <div class="card-body py-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="small fw-semibold">Progress: <span id="answered-count">0</span>/20 answered</span>
+            <span class="small text-muted" id="progress-pct">0%</span>
+          </div>
+          <div class="progress progress-sm">
+            <div id="progress-bar" class="progress-bar bg-primary" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="alert-container"></div>
+
+      <form id="questionnaire-form">
+        <!-- Privacy -->
+        <div class="question-group">
+          <h5><i class="bi bi-shield-lock me-2"></i>Privacy (Q1–Q4)</h5>
+          <div id="q1" class="question-item">
+            <div class="question-text"><strong>Q1.</strong> Does the AI system collect or process personal data?</div>
+            <div class="question-toggle">
+              <button type="button" class="btn-yes" data-q="q1" data-val="true">Yes</button>
+              <button type="button" class="btn-no" data-q="q1" data-val="false">No</button>
+            </div>
+          </div>
+          <div id="q2" class="question-item">
+            <div class="question-text"><strong>Q2.</strong> Is user consent obtained before data collection?</div>
+            <div class="question-toggle">
+              <button type="button" class="btn-yes" data-q="q2" data-val="true">Yes</button>
+              <button type="button" class="btn-no" data-q="q2" data-val="false">No</button>
+            </div>
+          </div>
+          <div id="q3" class="question-item">
+            <div class="question-text"><strong>Q3.</strong> Is the data anonymized or encrypted during storage?</div>
+            <div class="question-toggle">
+              <button type="button" class="btn-yes" data-q="q3" data-val="true">Yes</button>
+              <button type="button" class="btn-no" data-q="q3" data-val="false">No</button>
+            </div>
+          </div>
+          <div id="q4" class="question-item">
+            <div class="question-text"><strong>Q4.</strong> Does the system comply with data protection regulations?</div>
+            <div class="question-toggle">
+              <button type="button" class="btn-yes" data-q="q4" data-val="true">Yes</button>
+              <button type="button" class="btn-no" data-q="q4" data-val="false">No</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fairness -->
+        <div class="question-group">
+          <h5><i class="bi bi-balance-scale me-2"></i>Fairness (Q5–Q8)</h5>
+          <div id="q5" class="question-item">
+            <div class="question-text"><strong>Q5.</strong> Has the model been tested for bias across demographic groups?</div>
+            <div class="question-toggle">
+              <button type="button" class="btn-yes" data-q="q5" data-val="true">Yes</button>
+              <button type="button" class="btn-no" data-q="q5" data-val="false">No</button>
+            </div>
+          </div>
+          <div id="q6" class="question-item">
+            <div class="question-text"><strong>Q6.</strong> Does the system make decisions that affect human lives?</div>
+            <div class="question-toggle">
+              <button type="button" class="btn-yes" data-q="q6" data-val="true">Yes</button>
+              <button type="button" class="btn-no" data-q="q6" data-val="false">No</button>
+            </div>
+          </div>
+          <div id="q7" class="question-item">
+            <div class="question-text"><strong>Q7.</strong> Are there mechanisms to appeal or override AI decisions?</div>
+            <div class="question-toggle">
+              <button type="button" class="btn-yes" data-q="q7" data-val="true">Yes</button>
+              <button type="button" class="btn-no" data-q="q7" data-val="false">No</button>
+            </div>
+          </div>
+          <div id="q8" class="question-item">
+            <div class="question-text"><strong>Q8.</strong> Was the training data diverse and representative?</div>
+            <div class="question-toggle">
+              <button type="button" class="btn-yes" data-q="q8" data-val="true">Yes</button>
+              <button type="button" class="btn-no" data-q="q8" data-val="false">No</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Security -->
+        <div class="question-group">
+          <h5><i class="bi bi-lock-fill me-2"></i>Security (Q9–Q12)</h5>
+          <div id="q9" class="question-item">
+            <div class="question-text"><strong>Q9.</strong> Has a cybersecurity risk assessment been conducted?</div>
+            <div class="question-toggle">
+              <button type="button" class="btn-yes" data-q="q9" data-val="true">Yes</button>
+              <button type="button" class="btn-no" data-q="q9" data-val="false">No</button>
+            </div>
+          </div>
+          <div id="q10" class="question-item">
+            <div class="question-text"><strong>Q10.</strong> Are there access controls limiting who can use the system?</div>
+            <div class="question-toggle">
+              <button type="button" class="btn-yes" data-q="q10" data-val="true">Yes</button>
+              <button type="button" class="btn-no" data-q="q10" data-val="false">No</button>
+            </div>
+          </div>
+          <div id="q11" class="question-item">
+            <div class="question-text"><strong>Q11.</strong> Is the system protected against adversarial attacks?</div>
+            <div class="question-toggle">
+              <button type="button" class="btn-yes" data-q="q11" data-val="true">Yes</button>
+              <button type="button" class="btn-no" data-q="q11" data-val="false">No</button>
+            </div>
+          </div>
+          <div id="q12" class="question-item">
+            <div class="question-text"><strong>Q12.</strong> Are there incident response procedures if the system is compromised?</div>
+            <div class="question-toggle">
+              <button type="button" class="btn-yes" data-q="q12" data-val="true">Yes</button>
+              <button type="button" class="btn-no" data-q="q12" data-val="false">No</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transparency -->
+        <div class="question-group">
+          <h5><i class="bi bi-eye me-2"></i>Transparency (Q13–Q16)</h5>
+          <div id="q13" class="question-item">
+            <div class="question-text"><strong>Q13.</strong> Is model documentation publicly available?</div>
+            <div class="question-toggle">
+              <button type="button" class="btn-yes" data-q="q13" data-val="true">Yes</button>
+              <button type="button" class="btn-no" data-q="q13" data-val="false">No</button>
+            </div>
+          </div>
+          <div id="q14" class="question-item">
+            <div class="question-text"><strong>Q14.</strong> Can the AI explain why it made a specific decision?</div>
+            <div class="question-toggle">
+              <button type="button" class="btn-yes" data-q="q14" data-val="true">Yes</button>
+              <button type="button" class="btn-no" data-q="q14" data-val="false">No</button>
+            </div>
+          </div>
+          <div id="q15" class="question-item">
+            <div class="question-text"><strong>Q15.</strong> Are users informed that they are interacting with an AI?</div>
+            <div class="question-toggle">
+              <button type="button" class="btn-yes" data-q="q15" data-val="true">Yes</button>
+              <button type="button" class="btn-no" data-q="q15" data-val="false">No</button>
+            </div>
+          </div>
+          <div id="q16" class="question-item">
+            <div class="question-text"><strong>Q16.</strong> Is there a model card or data sheet for this system?</div>
+            <div class="question-toggle">
+              <button type="button" class="btn-yes" data-q="q16" data-val="true">Yes</button>
+              <button type="button" class="btn-no" data-q="q16" data-val="false">No</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Accountability -->
+        <div class="question-group">
+          <h5><i class="bi bi-person-check me-2"></i>Accountability (Q17–Q20)</h5>
+          <div id="q17" class="question-item">
+            <div class="question-text"><strong>Q17.</strong> Is there a designated person responsible for AI outcomes?</div>
+            <div class="question-toggle">
+              <button type="button" class="btn-yes" data-q="q17" data-val="true">Yes</button>
+              <button type="button" class="btn-no" data-q="q17" data-val="false">No</button>
+            </div>
+          </div>
+          <div id="q18" class="question-item">
+            <div class="question-text"><strong>Q18.</strong> Are audit logs maintained for all AI decisions?</div>
+            <div class="question-toggle">
+              <button type="button" class="btn-yes" data-q="q18" data-val="true">Yes</button>
+              <button type="button" class="btn-no" data-q="q18" data-val="false">No</button>
+            </div>
+          </div>
+          <div id="q19" class="question-item">
+            <div class="question-text"><strong>Q19.</strong> Is there a process for reporting AI-related harms?</div>
+            <div class="question-toggle">
+              <button type="button" class="btn-yes" data-q="q19" data-val="true">Yes</button>
+              <button type="button" class="btn-no" data-q="q19" data-val="false">No</button>
+            </div>
+          </div>
+          <div id="q20" class="question-item">
+            <div class="question-text"><strong>Q20.</strong> Has the system undergone independent review before deployment?</div>
+            <div class="question-toggle">
+              <button type="button" class="btn-yes" data-q="q20" data-val="true">Yes</button>
+              <button type="button" class="btn-no" data-q="q20" data-val="false">No</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-4 mb-5">
+          <button type="submit" class="btn btn-primary btn-lg fw-semibold" id="submit-btn" disabled>
+            <i class="bi bi-send me-2"></i>Submit Assessment
+          </button>
+          <a href="/views/developer/dashboard.html" class="btn btn-outline-secondary btn-lg">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    const user = ACEAS.requireAuth(['ai_developer']);
+    if (!user) throw new Error('Not authenticated');
+    ACEAS.populateUserNav();
+
+    const params = new URLSearchParams(window.location.search);
+    const projectId = params.get('id');
+    if (!projectId) {
+      window.location.href = '/views/developer/dashboard.html';
+    }
+
+    // Load project title
+    ACEAS.apiFetch(`/developer/projects/${projectId}`)
+      .then(data => {
+        document.getElementById('project-title-display').textContent =
+          `Assessing: ${data.project.title}`;
+      })
+      .catch(() => {});
+
+    const answers = {};
+
+    // Toggle buttons
+    document.querySelectorAll('.btn-yes, .btn-no').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const q = btn.dataset.q;
+        const val = btn.dataset.val === 'true';
+
+        // Update UI
+        const parent = btn.closest('.question-toggle');
+        parent.querySelectorAll('.btn-yes, .btn-no').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        answers[q] = val;
+        updateProgress();
+      });
+    });
+
+    function updateProgress() {
+      const count = Object.keys(answers).length;
+      const pct = Math.round((count / 20) * 100);
+      document.getElementById('answered-count').textContent = count;
+      document.getElementById('progress-pct').textContent = `${pct}%`;
+      document.getElementById('progress-bar').style.width = `${pct}%`;
+      document.getElementById('submit-btn').disabled = count < 20;
+    }
+
+    document.getElementById('questionnaire-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      const alertBox = document.getElementById('alert-container');
+      alertBox.innerHTML = '';
+
+      if (Object.keys(answers).length < 20) {
+        alertBox.innerHTML = '<div class="alert alert-warning">Please answer all 20 questions before submitting.</div>';
+        window.scrollTo(0, 0);
+        return;
+      }
+
+      ACEAS.setLoading(btn, true, 'Submitting & generating AI recommendations...');
+
+      try {
+        const data = await ACEAS.apiFetch(`/developer/projects/${projectId}/assess`, {
+          method: 'POST',
+          body: JSON.stringify(answers),
+        });
+
+        ACEAS.showToast('Assessment submitted! Loading results...', 'success');
+        setTimeout(() => {
+          window.location.href = `/views/developer/results.html?id=${projectId}`;
+        }, 1000);
+      } catch (err) {
+        alertBox.innerHTML = `<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>${err.message}</div>`;
+        window.scrollTo(0, 0);
+        ACEAS.setLoading(btn, false);
+      }
+    });
+  </script>
+</body>
+</html>
