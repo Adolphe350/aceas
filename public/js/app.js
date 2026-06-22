@@ -176,8 +176,8 @@ function populateUserNav() {
 
 // Logout
 function logout() {
-  apiFetch('/auth/logout', { method: 'POST' }).catch(() => {});
   clearAuth();
+  fetch(`${API_BASE}/auth/logout`, { method: 'POST' }).catch(() => {});
   window.location.href = '/views/login.html';
 }
 
