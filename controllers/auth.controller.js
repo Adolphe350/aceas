@@ -64,6 +64,26 @@ async function login(req, res) {
     // Reset failed attempts
     await pool.query('UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE id = $1', [user.id]);
 
+    // If OTP is disabled, issue JWT immediately (dev/test mode)
+    if (process.env.DISABLE_OTP === 'true') {
+      const token = jwt.sign(
+        { userId: user.id, email: user.email, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
+      );
+      await logAudit(pool, user.id, 'LOGIN_SUCCESS', 'users', user.id, ip);
+      return res.json({
+        message: 'Login successful',
+        token,
+        user: {
+          id: user.id,
+          fullName: user.full_name,
+          email: user.email,
+          role: user.role,
+        },
+      });
+    }
+
     // Generate and send OTP
     const otp = await createOTP(user.id);
     const emailResult = await sendOTPEmail(user.email, user.full_name, otp);

@@ -86,11 +86,17 @@
           }),
         });
 
-        // Store userId for OTP step
-        sessionStorage.setItem('otp_user_id', data.userId);
-        sessionStorage.setItem('otp_masked_email', data.maskedEmail);
-
-        window.location.href = '/views/verify-otp.html';
+        if (data.token) {
+          // OTP disabled — direct login
+          ACEAS.setToken(data.token);
+          ACEAS.setUser(data.user);
+          ACEAS.redirectToDashboard(data.user.role);
+        } else {
+          // OTP required — store userId for OTP step
+          sessionStorage.setItem('otp_user_id', data.userId);
+          sessionStorage.setItem('otp_masked_email', data.maskedEmail);
+          window.location.href = '/views/verify-otp.html';
+        }
       } catch (err) {
         alertBox.innerHTML = `<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>${err.message}</div>`;
         ACEAS.setLoading(btn, false);
