@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ACEAS — AI Compliance & Ethics Assessment System</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    :root {
+      --navy: #1a1a2e;
+      --navy-mid: #16213e;
+      --navy-deep: #0f3460;
+      --accent: #6ea8fe;
+      --accent-bright: #4e96ff;
+      --primary: #0d6efd;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+    }
+
+    /* ── NAVBAR ── */
+    .top-nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2.5rem;
+      background: rgba(26, 26, 46, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .nav-logo {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: white;
+      text-decoration: none;
+      letter-spacing: -0.5px;
+    }
+    .nav-logo span { color: var(--accent); }
+
+    .nav-links { display: flex; gap: 0.5rem; align-items: center; }
+
+    .nav-links a {
+      color: rgba(255,255,255,0.75);
+      text-decoration: none;
+      font-size: 0.9rem;
+      padding: 0.4rem 1rem;
+      border-radius: 6px;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: white; }
+
+    .btn-nav-login {
+      background: transparent;
+      border: 1.5px solid rgba(255,255,255,0.3);
+      color: white !important;
+      border-radius: 8px;
+      padding: 0.4rem 1.2rem !important;
+      transition: all 0.2s !important;
+    }
+    .btn-nav-login:hover {
+      border-color: var(--accent) !important;
+      color: var(--accent) !important;
+    }
+
+    .btn-nav-signup {
+      background: var(--primary);
+      color: white !important;
+      border-radius: 8px;
+      padding: 0.4rem 1.2rem !important;
+      font-weight: 600;
+      transition: background 0.2s !important;
+    }
+    .btn-nav-signup:hover { background: #0a58ca !important; }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 50%, var(--navy-deep) 100%);
+      display: flex;
+      align-items: center;
+      padding: 6rem 2rem 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -200px; right: -200px;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(110,168,254,0.12) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -150px; left: -150px;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(13,110,253,0.1) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .hero-content { position: relative; z-index: 1; max-width: 620px; }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(110,168,254,0.15);
+      border: 1px solid rgba(110,168,254,0.3);
+      color: var(--accent);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.35rem 1rem;
+      border-radius: 50px;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.4rem, 5vw, 3.4rem);
+      font-weight: 900;
+      color: white;
+      line-height: 1.15;
+      margin-bottom: 1.25rem;
+      letter-spacing: -1px;
+    }
+    .hero h1 span { color: var(--accent); }
+
+    .hero p {
+      font-size: 1.1rem;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.7;
+      margin-bottom: 2rem;
+    }
+
+    .hero-cta { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+    .btn-hero-primary {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.8rem 2rem;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 20px rgba(13,110,253,0.4);
+    }
+    .btn-hero-primary:hover {
+      background: #0a58ca;
+      color: white;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(13,110,253,0.5);
+    }
+
+    .btn-hero-secondary {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      border: 1.5px solid rgba(255,255,255,0.25);
+      padding: 0.8rem 2rem;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-hero-secondary:hover {
+      background: rgba(255,255,255,0.18);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .hero-visual {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 1.5rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .hero-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1.2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .hero-card-header .icon-box {
+      width: 36px; height: 36px;
+      background: var(--primary);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 1rem;
+    }
+    .hero-card-header .title { color: white; font-weight: 700; font-size: 0.95rem; }
+    .hero-card-header .sub { color: rgba(255,255,255,0.5); font-size: 0.78rem; }
+
+    .score-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      font-size: 0.82rem;
+    }
+    .score-label { color: rgba(255,255,255,0.65); }
+    .score-val { font-weight: 700; }
+    .score-bar-wrap { width: 100%; background: rgba(255,255,255,0.1); border-radius: 4px; height: 5px; margin-top: 3px; }
+    .score-bar-fill { height: 5px; border-radius: 4px; }
+
+    .risk-pill {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-top: 1rem;
+    }
+    .risk-low-pill { background: rgba(25,135,84,0.2); color: #75c99b; border: 1px solid rgba(25,135,84,0.3); }
+    .risk-medium-pill { background: rgba(253,126,20,0.2); color: #ffb067; border: 1px solid rgba(253,126,20,0.3); }
+
+    /* ── STATS STRIP ── */
+    .stats-strip {
+      background: white;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .stat-item { text-align: center; }
+    .stat-num {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: var(--primary);
+      line-height: 1;
+    }
+    .stat-txt {
+      font-size: 0.82rem;
+      color: #6c757d;
+      margin-top: 4px;
+    }
+
+    /* ── FEATURES ── */
+    .features {
+      padding: 5rem 2rem;
+      background: #f4f6f9;
+    }
+    .section-label {
+      display: inline-block;
+      background: rgba(13,110,253,0.1);
+      color: var(--primary);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 0.3rem 1rem;
+      border-radius: 50px;
+      margin-bottom: 1rem;
+    }
+    .section-title {
+      font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+      font-weight: 900;
+      color: #1a1a2e;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.5px;
+    }
+    .section-sub { color: #6c757d; font-size: 1rem; max-width: 520px; }
+
+    .feature-card {
+      background: white;
+      border-radius: 14px;
+      padding: 1.75rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      height: 100%;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .feature-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    }
+    .feature-icon {
+      width: 52px; height: 52px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      margin-bottom: 1.1rem;
+    }
+    .feature-card h4 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 0.5rem;
+    }
+    .feature-card p {
+      font-size: 0.875rem;
+      color: #6c757d;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .how-it-works {
+      padding: 5rem 2rem;
+      background: white;
+    }
+    .step-num {
+      width: 48px; height: 48px;
+      background: var(--navy);
+      color: white;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin: 0 auto 1.2rem;
+      flex-shrink: 0;
+    }
+    .step-card {
+      text-align: center;
+      padding: 1rem;
+    }
+    .step-card h5 { font-weight: 700; color: #1a1a2e; margin-bottom: 0.5rem; }
+    .step-card p { font-size: 0.875rem; color: #6c757d; line-height: 1.6; margin: 0; }
+
+    /* ── ROLES ── */
+    .roles {
+      padding: 5rem 2rem;
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-deep) 100%);
+    }
+    .role-card {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 2rem;
+      text-align: center;
+      transition: all 0.2s;
+      height: 100%;
+    }
+    .role-card:hover {
+      background: rgba(255,255,255,0.12);
+      border-color: var(--accent);
+      transform: translateY(-3px);
+    }
+    .role-icon {
+      width: 64px; height: 64px;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem;
+      margin: 0 auto 1.2rem;
+    }
+    .role-card h4 { color: white; font-weight: 700; margin-bottom: 0.5rem; }
+    .role-card p { color: rgba(255,255,255,0.6); font-size: 0.875rem; line-height: 1.6; margin: 0; }
+
+    /* ── CTA BANNER ── */
+    .cta-banner {
+      padding: 5rem 2rem;
+      background: #f4f6f9;
+      text-align: center;
+    }
+    .cta-banner h2 {
+      font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+      font-weight: 900;
+      color: #1a1a2e;
+      margin-bottom: 1rem;
+      letter-spacing: -0.5px;
+    }
+    .cta-banner p { color: #6c757d; font-size: 1rem; margin-bottom: 2rem; }
+
+    /* ── FOOTER ── */
+    .footer {
+      background: var(--navy);
+      color: rgba(255,255,255,0.5);
+      padding: 2rem;
+      text-align: center;
+      font-size: 0.82rem;
+    }
+    .footer a { color: var(--accent); text-decoration: none; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .top-nav { padding: 0.9rem 1.25rem; }
+      .hero { padding: 5.5rem 1.25rem 3rem; }
+      .hero-visual { margin-top: 2.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="top-nav">
+    <a href="/" class="nav-logo">ACE<span>AS</span></a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How it Works</a>
+      <a href="/views/login.html" class="btn-nav-login">Log In</a>
+      <a href="/views/register.html" class="btn-nav-signup">Get Started</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <div class="row align-items-center g-5">
+        <div class="col-lg-6">
+          <div class="hero-content">
+            <div class="hero-badge">
+              <i class="bi bi-shield-check"></i> AI Ethics & Compliance Platform
+            </div>
+            <h1>Ensure Your AI is <span>Responsible</span> & Compliant</h1>
+            <p>ACEAS helps AI developers assess their systems against ethics frameworks, get compliance scores, and receive AI-powered recommendations — all in one place.</p>
+            <div class="hero-cta">
+              <a href="/views/register.html" class="btn-hero-primary">
+                <i class="bi bi-arrow-right-circle"></i> Start Free Assessment
+              </a>
+              <a href="/views/login.html" class="btn-hero-secondary">
+                <i class="bi bi-box-arrow-in-right"></i> Sign In
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 hero-visual">
+          <div class="hero-card">
+            <div class="hero-card-header">
+              <div class="icon-box"><i class="bi bi-robot"></i></div>
+              <div>
+                <div class="title">Customer Credit Scoring AI</div>
+                <div class="sub">Assessment Report · Just completed</div>
+              </div>
+            </div>
+            <!-- Privacy -->
+            <div class="score-row">
+              <span class="score-label"><i class="bi bi-shield-lock me-1"></i>Privacy</span>
+              <span class="score-val" style="color:#75c99b">82%</span>
+            </div>
+            <div class="score-bar-wrap mb-2">
+              <div class="score-bar-fill" style="width:82%;background:#198754"></div>
+            </div>
+            <!-- Fairness -->
+            <div class="score-row">
+              <span class="score-label"><i class="bi bi-balance-scale me-1"></i>Fairness</span>
+              <span class="score-val" style="color:#ffb067">67%</span>
+            </div>
+            <div class="score-bar-wrap mb-2">
+              <div class="score-bar-fill" style="width:67%;background:#fd7e14"></div>
+            </div>
+            <!-- Security -->
+            <div class="score-row">
+              <span class="score-label"><i class="bi bi-lock-fill me-1"></i>Security</span>
+              <span class="score-val" style="color:#75c99b">90%</span>
+            </div>
+            <div class="score-bar-wrap mb-2">
+              <div class="score-bar-fill" style="width:90%;background:#198754"></div>
+            </div>
+            <!-- Transparency -->
+            <div class="score-row">
+              <span class="score-label"><i class="bi bi-eye me-1"></i>Transparency</span>
+              <span class="score-val" style="color:#ffb067">74%</span>
+            </div>
+            <div class="score-bar-wrap mb-3">
+              <div class="score-bar-fill" style="width:74%;background:#fd7e14"></div>
+            </div>
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div style="color:rgba(255,255,255,0.5);font-size:0.75rem;">Overall Score</div>
+                <div style="color:white;font-size:1.6rem;font-weight:900;">78.3%</div>
+              </div>
+              <span class="risk-pill risk-medium-pill"><i class="bi bi-exclamation-triangle me-1"></i>Medium Risk</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="stats-strip">
+    <div class="container">
+      <div class="row g-4 text-center">
+        <div class="col-6 col-md-3 stat-item">
+          <div class="stat-num">20</div>
+          <div class="stat-txt">Ethics Questions Covered</div>
+        </div>
+        <div class="col-6 col-md-3 stat-item">
+          <div class="stat-num">5</div>
+          <div class="stat-txt">Compliance Domains</div>
+        </div>
+        <div class="col-6 col-md-3 stat-item">
+          <div class="stat-num">AI</div>
+          <div class="stat-txt">Powered Recommendations</div>
+        </div>
+        <div class="col-6 col-md-3 stat-item">
+          <div class="stat-num">3</div>
+          <div class="stat-txt">Role-Based Workflows</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="text-center mb-5">
+        <span class="section-label">Platform Features</span>
+        <h2 class="section-title">Everything you need for AI compliance</h2>
+        <p class="section-sub mx-auto">From submission to approval, ACEAS covers the full compliance lifecycle for AI systems.</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon" style="background:#e8f4ff">
+              <i class="bi bi-clipboard-check" style="color:#0d6efd"></i>
+            </div>
+            <h4>Structured Assessment</h4>
+            <p>Answer 20 carefully designed questions across Privacy, Fairness, Security, Transparency, and Accountability to get a full compliance picture.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon" style="background:#e8fff2">
+              <i class="bi bi-robot" style="color:#198754"></i>
+            </div>
+            <h4>AI-Powered Recommendations</h4>
+            <p>Get intelligent, context-aware improvement suggestions generated by Gemini AI based on your specific assessment results.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon" style="background:#fff8e1">
+              <i class="bi bi-graph-up" style="color:#fd7e14"></i>
+            </div>
+            <h4>Risk Scoring</h4>
+            <p>Instant risk classification — Low, Medium, High, or Critical — so you know exactly where your AI system stands before it ships.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon" style="background:#fde8e8">
+              <i class="bi bi-person-badge" style="color:#dc3545"></i>
+            </div>
+            <h4>Officer Review Workflow</h4>
+            <p>Compliance officers can review submissions, approve or reject them, and request changes — all tracked with a full audit trail.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon" style="background:#f0e8ff">
+              <i class="bi bi-file-earmark-pdf" style="color:#6f42c1"></i>
+            </div>
+            <h4>PDF Report Export</h4>
+            <p>Download a professional compliance report for any assessed project — ready to share with stakeholders or regulators.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon" style="background:#e8f8ff">
+              <i class="bi bi-shield-lock" style="color:#0dcaf0"></i>
+            </div>
+            <h4>Role-Based Access</h4>
+            <p>Separate dashboards for AI Developers, Compliance Officers, and System Admins — everyone sees only what they need.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="container">
+      <div class="text-center mb-5">
+        <span class="section-label">Process</span>
+        <h2 class="section-title">How ACEAS works</h2>
+        <p class="section-sub mx-auto">From registration to approval in four simple steps.</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-sm-6 col-lg-3">
+          <div class="step-card">
+            <div class="step-num">1</div>
+            <h5>Register Your Project</h5>
+            <p>Describe your AI system — type, purpose, dataset, and use case — to create a compliance project.</p>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="step-card">
+            <div class="step-num">2</div>
+            <h5>Answer 20 Questions</h5>
+            <p>Complete the structured ethics questionnaire covering all five compliance domains with simple Yes/No answers.</p>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="step-card">
+            <div class="step-num">3</div>
+            <h5>Get Your Score & AI Report</h5>
+            <p>Receive an instant compliance score, risk classification, and AI-generated improvement recommendations.</p>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="step-card">
+            <div class="step-num">4</div>
+            <h5>Officer Review & Approval</h5>
+            <p>A compliance officer reviews your submission and provides a final decision with feedback.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROLES -->
+  <section class="roles">
+    <div class="container">
+      <div class="text-center mb-5">
+        <span class="section-label" style="background:rgba(110,168,254,0.15);color:var(--accent)">Who it's for</span>
+        <h2 class="section-title" style="color:white">Built for every team member</h2>
+        <p class="section-sub mx-auto" style="color:rgba(255,255,255,0.6)">Three tailored experiences in one platform.</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="role-card">
+            <div class="role-icon" style="background:rgba(13,110,253,0.2)">
+              <i class="bi bi-code-slash" style="color:#6ea8fe"></i>
+            </div>
+            <h4>AI Developer</h4>
+            <p>Submit AI systems, complete the ethics questionnaire, view your compliance scores, and track review status — all from your personal dashboard.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="role-card">
+            <div class="role-icon" style="background:rgba(25,135,84,0.2)">
+              <i class="bi bi-person-badge" style="color:#75c99b"></i>
+            </div>
+            <h4>Compliance Officer</h4>
+            <p>Review submitted AI systems, examine detailed assessment reports, and approve, reject, or request changes with documented reasoning.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="role-card">
+            <div class="role-icon" style="background:rgba(253,126,20,0.2)">
+              <i class="bi bi-shield-check" style="color:#ffb067"></i>
+            </div>
+            <h4>System Admin</h4>
+            <p>Manage user accounts, monitor all projects across the platform, and maintain a full audit log of every action taken.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA BANNER -->
+  <section class="cta-banner">
+    <div class="container">
+      <h2>Ready to assess your AI system?</h2>
+      <p>Create a free account and run your first compliance assessment in minutes.</p>
+      <div class="d-flex gap-3 justify-content-center flex-wrap">
+        <a href="/views/register.html" class="btn btn-primary btn-lg fw-bold px-4" style="border-radius:10px">
+          <i class="bi bi-person-plus me-2"></i>Create Free Account
+        </a>
+        <a href="/views/login.html" class="btn btn-outline-secondary btn-lg px-4" style="border-radius:10px">
+          <i class="bi bi-box-arrow-in-right me-2"></i>Already have an account
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="mb-2">
+        <strong style="color:white">ACE<span style="color:#6ea8fe">AS</span></strong>
+        &nbsp;·&nbsp; AI Compliance and Ethics Assessment System
+      </div>
+      <div>
+        <a href="/views/login.html">Login</a> &nbsp;·&nbsp;
+        <a href="/views/register.html">Register</a>
+      </div>
+      <div class="mt-2" style="font-size:0.75rem">© 2024 ACEAS. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    // If already logged in, skip landing and go straight to dashboard
+    if (ACEAS.getToken() && ACEAS.getUser()) {
+      ACEAS.redirectToDashboard(ACEAS.getUser().role);
+    }
+  </script>
+</body>
+</html>

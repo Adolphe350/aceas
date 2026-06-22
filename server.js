@@ -54,7 +54,8 @@ const serveHtml = (filePath) => (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'views', filePath));
 };
 
-app.get('/', (req, res) => res.redirect('/views/login.html'));
+app.get('/', serveHtml('landing.html'));
+app.get('/landing', serveHtml('landing.html'));
 app.get('/login', serveHtml('login.html'));
 app.get('/register', serveHtml('register.html'));
 app.get('/verify-otp', serveHtml('verify-otp.html'));
