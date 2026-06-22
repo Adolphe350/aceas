@@ -19,7 +19,7 @@
       <div class="sidebar-footer">
         <div id="nav-user-name" class="fw-semibold text-white mb-1"></div>
         <div id="nav-user-role" class="small opacity-75 mb-2"></div>
-        <button onclick="ACEAS.logout()" class="btn btn-link text-danger text-decoration-none small p-0">
+        <button id="logout-btn" data-action="logout" onclick="doLogout()" class="btn btn-link text-danger text-decoration-none small p-0" style="cursor:pointer;border:none;background:none;">
           <i class="bi bi-box-arrow-left me-1"></i>Logout
         </button>
       </div>

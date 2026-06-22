@@ -204,3 +204,15 @@ window.ACEAS = {
   roleDisplay, redirectToDashboard, populateUserNav, logout,
   formatDate, scoreColor,
 };
+
+// Ensure logout button always works regardless of load order
+window.doLogout = logout;
+document.addEventListener('DOMContentLoaded', function () {
+  var btns = document.querySelectorAll('[data-action="logout"], #logout-btn');
+  btns.forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      logout();
+    });
+  });
+});
