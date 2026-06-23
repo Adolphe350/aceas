@@ -23,7 +23,8 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdnjs.cloudflare.com"],
       fontSrc: ["'self'", "cdn.jsdelivr.net", "cdnjs.cloudflare.com"],
       imgSrc: ["'self'", "data:"],
-      connectSrc: ["'self'"],
+      connectSrc: ["'self'", "cdn.jsdelivr.net"],
+      workerSrc: ["'self'", "blob:"],
     },
   },
 }));

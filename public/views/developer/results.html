@@ -277,17 +277,15 @@
     async function downloadPDF() {
       try {
         const token = ACEAS.getToken();
-        const res = await fetch(`/api/developer/projects/${projectId}/report`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error('Failed to generate report');
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
+        // Use direct navigation with token as query param — avoids blob/CSP issues
+        const url = `/api/developer/projects/${projectId}/report?token=${encodeURIComponent(token)}`;
         const a = document.createElement('a');
         a.href = url;
         a.download = `aceas-report-${projectId}.pdf`;
+        a.target = '_blank';
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(url);
+        document.body.removeChild(a);
       } catch (err) {
         ACEAS.showToast('Failed to download report: ' + err.message, 'danger');
       }
