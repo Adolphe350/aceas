@@ -1,5 +1,39 @@
 const PDFDocument = require('pdfkit');
 
+function ensureSpace(doc, heightNeeded = 60) {
+  if (doc.y + heightNeeded > doc.page.height - 60) {
+    doc.addPage();
+  }
+}
+
+function drawBarChart(doc, x, y, width, items) {
+  const chartHeight = 180;
+  const barWidth = 44;
+  const gap = 18;
+  const maxValue = 100;
+
+  doc.save();
+  doc.strokeColor('#ced4da').lineWidth(1);
+  doc.moveTo(x, y).lineTo(x, y + chartHeight).lineTo(x + width, y + chartHeight).stroke();
+
+  [0, 25, 50, 75, 100].forEach((tick) => {
+    const tickY = y + chartHeight - (tick / maxValue) * chartHeight;
+    doc.strokeColor('#e9ecef').moveTo(x, tickY).lineTo(x + width, tickY).stroke();
+    doc.fillColor('#6c757d').fontSize(8).font('Helvetica').text(`${tick}%`, x - 28, tickY - 4, { width: 24, align: 'right' });
+  });
+
+  items.forEach((item, idx) => {
+    const barX = x + 18 + idx * (barWidth + gap);
+    const barH = (item.score / maxValue) * chartHeight;
+    const barY = y + chartHeight - barH;
+    doc.roundedRect(barX, barY, barWidth, barH, 4).fill(item.color);
+    doc.fillColor('#212529').fontSize(8).font('Helvetica-Bold').text(item.shortLabel, barX - 8, y + chartHeight + 8, { width: barWidth + 16, align: 'center' });
+    doc.fillColor('#495057').fontSize(8).font('Helvetica').text(`${item.score.toFixed(1)}%`, barX - 8, y + chartHeight + 20, { width: barWidth + 16, align: 'center' });
+  });
+  doc.restore();
+  return y + chartHeight + 38;
+}
+
 const QUESTIONS = [
   // Privacy
   { num: 1, domain: 'Privacy', text: 'Does the AI system collect or process personal data?' },
@@ -93,9 +127,19 @@ function generateReport(data) {
       .text(assessment.risk_level, 200, scoreBoxY + 38);
     doc.moveDown(4.5);
 
-    // Domain Scores Table
+    // Domain Scores Table + chart
     doc.fontSize(14).font('Helvetica-Bold').fillColor('#212529').text('Domain Scores');
     doc.moveDown(0.4);
+
+    const chartItems = [
+      { shortLabel: 'Privacy', score: parseFloat(assessment.privacy_score), color: '#0d6efd' },
+      { shortLabel: 'Fairness', score: parseFloat(assessment.fairness_score), color: '#6610f2' },
+      { shortLabel: 'Security', score: parseFloat(assessment.security_score), color: '#dc3545' },
+      { shortLabel: 'Trans.', score: parseFloat(assessment.transparency_score), color: '#fd7e14' },
+      { shortLabel: 'Acc.', score: parseFloat(assessment.accountability_score), color: '#198754' },
+    ];
+    const chartEndY = drawBarChart(doc, 80, doc.y + 8, doc.page.width - 160, chartItems);
+    doc.y = chartEndY + 8;
 
     const tableHeaders = ['Domain', 'Score', 'Weight', 'Status'];
     const colWidths = [160, 80, 80, 120];
