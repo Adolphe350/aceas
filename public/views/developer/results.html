@@ -277,14 +277,36 @@
     async function downloadPDF() {
       try {
         const token = ACEAS.getToken();
-        // Use direct navigation with token as query param — avoids blob/CSP issues
-        const url = `/api/developer/projects/${projectId}/report?token=${encodeURIComponent(token)}`;
+        if (!token) throw new Error('Session expired. Please log in again.');
+
+        const res = await fetch(`/api/developer/projects/${projectId}/report`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          let msg = `HTTP ${res.status}`;
+          const contentType = res.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const data = await res.json();
+            msg = data.error || msg;
+          } else {
+            msg = await res.text() || msg;
+          }
+          throw new Error(msg);
+        }
+
+        const blob = await res.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
+        a.href = blobUrl;
         a.download = `aceas-report-${projectId}.pdf`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+        window.URL.revokeObjectURL(blobUrl);
       } catch (err) {
         ACEAS.showToast('Failed to download report: ' + err.message, 'danger');
       }
