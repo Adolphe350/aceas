@@ -205,11 +205,37 @@ function generateReport(data) {
     doc.addPage();
     doc.fontSize(14).font('Helvetica-Bold').fillColor('#212529').text('AI-Powered Recommendations');
     doc.moveDown(0.5);
-    doc.fontSize(10).font('Helvetica').fillColor('#495057')
-      .text(assessment.ai_recommendations || 'No recommendations available.', {
-        paragraphGap: 5,
+
+    const recommendations = String(assessment.ai_recommendations || 'No recommendations available.')
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      .replace(/\t/g, '  ')
+      .replace(/\u0000/g, '')
+      .replace(/[\u0001-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+      .trim();
+
+    recommendations.split(/\n{2,}/).forEach((paragraph) => {
+      const clean = paragraph
+        .split('\n')
+        .map(line => line.trim())
+        .filter(Boolean)
+        .join('\n');
+
+      if (!clean) return;
+      doc.fontSize(10).font('Helvetica').fillColor('#495057').text(clean, 50, doc.y, {
+        width: doc.page.width - 100,
+        paragraphGap: 8,
         lineGap: 2,
       });
+      doc.moveDown(0.5);
+    });
+
+    if (doc.y < 100) {
+      doc.fontSize(10).font('Helvetica').fillColor('#495057').text('No recommendations available.', 50, doc.y, {
+        width: doc.page.width - 100,
+      });
+      doc.moveDown(0.5);
+    }
 
     // Officer Review
     if (review) {
