@@ -1,11 +1,5 @@
 const PDFDocument = require('pdfkit');
 
-function ensureSpace(doc, heightNeeded = 60) {
-  if (doc.y + heightNeeded > doc.page.height - 60) {
-    doc.addPage();
-  }
-}
-
 function drawBarChart(doc, x, y, width, items) {
   const chartHeight = 180;
   const barWidth = 44;
@@ -13,12 +7,14 @@ function drawBarChart(doc, x, y, width, items) {
   const maxValue = 100;
 
   doc.save();
-  doc.strokeColor('#ced4da').lineWidth(1);
-  doc.moveTo(x, y).lineTo(x, y + chartHeight).lineTo(x + width, y + chartHeight).stroke();
+  doc.strokeColor('#ced4da').lineWidth(1).fillColor('#212529');
+  doc.moveTo(x, y).lineTo(x, y + chartHeight).stroke();
+  doc.moveTo(x, y + chartHeight).lineTo(x + width, y + chartHeight).stroke();
 
   [0, 25, 50, 75, 100].forEach((tick) => {
     const tickY = y + chartHeight - (tick / maxValue) * chartHeight;
-    doc.strokeColor('#e9ecef').moveTo(x, tickY).lineTo(x + width, tickY).stroke();
+    doc.strokeColor('#e9ecef').lineWidth(1);
+    doc.moveTo(x, tickY).lineTo(x + width, tickY).stroke();
     doc.fillColor('#6c757d').fontSize(8).font('Helvetica').text(`${tick}%`, x - 28, tickY - 4, { width: 24, align: 'right' });
   });
 
@@ -26,7 +22,7 @@ function drawBarChart(doc, x, y, width, items) {
     const barX = x + 18 + idx * (barWidth + gap);
     const barH = (item.score / maxValue) * chartHeight;
     const barY = y + chartHeight - barH;
-    doc.roundedRect(barX, barY, barWidth, barH, 4).fill(item.color);
+    doc.fillColor(item.color).roundedRect(barX, barY, barWidth, Math.max(barH, 2), 4).fill();
     doc.fillColor('#212529').fontSize(8).font('Helvetica-Bold').text(item.shortLabel, barX - 8, y + chartHeight + 8, { width: barWidth + 16, align: 'center' });
     doc.fillColor('#495057').fontSize(8).font('Helvetica').text(`${item.score.toFixed(1)}%`, barX - 8, y + chartHeight + 20, { width: barWidth + 16, align: 'center' });
   });
