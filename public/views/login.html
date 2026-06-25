@@ -50,7 +50,31 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/js/app.js?v=2"></script>
+  <script>
+    // INLINE: Force clear stale auth if redirected here (runs before app.js)
+    // This prevents cache loops when app.js is stale in browser cache
+    (function() {
+      var params = new URLSearchParams(window.location.search);
+      if (params.has('cleared')) return; // already cleared, don't loop
+      var token = localStorage.getItem('aceas_token');
+      if (token) {
+        // Quick server check — if token is bad, clear everything
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/api/auth/me', false); // synchronous
+        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+        try { xhr.send(); } catch(e) {}
+        if (xhr.status !== 200) {
+          localStorage.removeItem('aceas_token');
+          localStorage.removeItem('aceas_user');
+          sessionStorage.clear();
+          // Reload with cache-bust to get fresh app.js
+          window.location.replace('/views/login.html?cleared=1&t=' + Date.now());
+          return;
+        }
+      }
+    })();
+  </script>
+  <script src="/js/app.js?v=3"></script>
   <script>
     // If already logged in, verify token is still valid then redirect
     // (avoids infinite loop when token is stale/expired after a server wipe)
