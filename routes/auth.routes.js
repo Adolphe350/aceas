@@ -18,4 +18,9 @@ router.post('/resend-otp', authLimiter, resendOTP);
 router.post('/register', authLimiter, register);
 router.post('/logout', authenticateToken, logout);
 
+// Token validation endpoint — used by login page to check if stored token is still valid
+router.get('/me', authenticateToken, (req, res) => {
+  res.json({ id: req.user.id, email: req.user.email, role: req.user.role });
+});
+
 module.exports = router;

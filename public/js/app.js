@@ -56,8 +56,9 @@ async function apiFetch(endpoint, options = {}) {
 
   if (res.status === 401) {
     clearAuth();
-    window.location.href = '/views/login.html';
-    throw new Error('Session expired');
+    // Redirect silently — no toast needed, login page handles stale token
+    window.location.replace('/views/login.html');
+    return new Promise(() => {}); // never resolves — stops further JS execution
   }
 
   let data;
