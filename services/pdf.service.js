@@ -105,10 +105,10 @@ function generateReport(data) {
       doc.fillColor('#212529').text(value, 200, lineY);
       lineY += 16;
     });
-    doc.moveDown(7);
+    // Advance past the info box using its known height (120px)
+    doc.y = infoY + 120 + 14;
 
     // Overall Score
-    doc.moveDown(0.5);
     const scoreColor = assessment.risk_level === 'Low Risk' ? '#198754'
       : assessment.risk_level === 'Medium Risk' ? '#fd7e14'
       : assessment.risk_level === 'High Risk' ? '#dc3545'
@@ -121,7 +121,8 @@ function generateReport(data) {
       .text(`${parseFloat(assessment.overall_score).toFixed(1)}%`, 65, scoreBoxY + 28);
     doc.fontSize(12).font('Helvetica-Bold').fillColor(scoreColor)
       .text(assessment.risk_level, 200, scoreBoxY + 38);
-    doc.moveDown(4.5);
+    // Advance past the score box (65px height)
+    doc.y = scoreBoxY + 65 + 14;
 
     // Domain Scores Table + chart
     doc.fontSize(14).font('Helvetica-Bold').fillColor('#212529').text('Domain Scores');
@@ -180,31 +181,51 @@ function generateReport(data) {
 
     // Q&A Section
     doc.addPage();
-    doc.fontSize(14).font('Helvetica-Bold').fillColor('#212529').text('Assessment Questionnaire Responses');
-    doc.moveDown(0.5);
+    doc.fontSize(14).font('Helvetica-Bold').fillColor('#212529').text('Assessment Questionnaire Responses', 50, 60);
+    doc.moveDown(0.6);
 
     let currentDomain = '';
     QUESTIONS.forEach((q) => {
+      // Page overflow check — leave at least 60px at bottom
+      if (doc.y > doc.page.height - 80) {
+        doc.addPage();
+        doc.moveDown(0.5);
+      }
+
       if (q.domain !== currentDomain) {
         currentDomain = q.domain;
-        doc.moveDown(0.5);
-        doc.fontSize(11).font('Helvetica-Bold').fillColor('#0d6efd').text(q.domain);
-        doc.moveDown(0.2);
+        if (doc.y > doc.page.height - 100) {
+          doc.addPage();
+        }
+        doc.moveDown(0.4);
+        doc.fontSize(11).font('Helvetica-Bold').fillColor('#0d6efd').text(q.domain, 50);
+        doc.moveDown(0.25);
       }
+
       const answer = assessment[`q${q.num}`];
-      const answerStr = answer === true ? 'Yes ✓' : answer === false ? 'No ✗' : 'N/A';
-      const answerColor = answer === true ? '#198754' : '#dc3545';
-      const currentY = doc.y;
+      // PostgreSQL may return 't'/'f' strings or true/false booleans
+      const boolAnswer = answer === true || answer === 't' || answer === 'true' || answer === 1;
+      const isFalse = answer === false || answer === 'f' || answer === 'false' || answer === 0;
+      const answerStr = boolAnswer ? 'Yes ✓' : isFalse ? 'No ✗' : 'N/A';
+      const answerColor = boolAnswer ? '#198754' : '#dc3545';
+
+      const rowY = doc.y;
+      // Write question text (left column, wrappable)
       doc.fontSize(9).font('Helvetica').fillColor('#495057')
-        .text(`Q${q.num}. ${q.text}`, 60, currentY, { width: 380 });
-      doc.fillColor(answerColor).font('Helvetica-Bold').text(answerStr, 455, currentY, { width: 60 });
+        .text(`Q${q.num}. ${q.text}`, 55, rowY, { width: 385, lineGap: 1 });
+      const afterTextY = doc.y;
+      // Write answer (right column, aligned to rowY)
+      doc.fillColor(answerColor).font('Helvetica-Bold').fontSize(9)
+        .text(answerStr, 450, rowY, { width: 65 });
+      // Move cursor past whichever was taller
+      doc.y = Math.max(afterTextY, rowY + 12);
       doc.moveDown(0.3);
     });
 
     // AI Recommendations
     doc.addPage();
-    doc.fontSize(14).font('Helvetica-Bold').fillColor('#212529').text('AI-Powered Recommendations');
-    doc.moveDown(0.5);
+    doc.fontSize(14).font('Helvetica-Bold').fillColor('#212529').text('AI-Powered Recommendations', 50, 60);
+    doc.moveDown(0.6);
 
     const recommendations = String(assessment.ai_recommendations || 'No recommendations available.')
       .replace(/\r\n/g, '\n')
@@ -214,36 +235,42 @@ function generateReport(data) {
       .replace(/[\u0001-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
       .trim();
 
-    recommendations.split(/\n{2,}/).forEach((paragraph) => {
-      const clean = paragraph
-        .split('\n')
-        .map(line => line.trim())
-        .filter(Boolean)
-        .join('\n');
+    const recParagraphs = recommendations.split(/\n{2,}/).map(p =>
+      p.split('\n').map(l => l.trim()).filter(Boolean).join('\n')
+    ).filter(Boolean);
 
-      if (!clean) return;
-      doc.fontSize(10).font('Helvetica').fillColor('#495057').text(clean, 50, doc.y, {
+    if (recParagraphs.length === 0) {
+      recParagraphs.push('No recommendations available.');
+    }
+
+    recParagraphs.forEach((paragraph) => {
+      // Page overflow check
+      if (doc.y > doc.page.height - 100) {
+        doc.addPage();
+        doc.moveDown(0.5);
+      }
+      doc.fontSize(10).font('Helvetica').fillColor('#495057').text(paragraph, 50, doc.y, {
         width: doc.page.width - 100,
-        paragraphGap: 8,
+        paragraphGap: 6,
         lineGap: 2,
       });
-      doc.moveDown(0.5);
+      doc.moveDown(0.6);
     });
-
-    if (doc.y < 100) {
-      doc.fontSize(10).font('Helvetica').fillColor('#495057').text('No recommendations available.', 50, doc.y, {
-        width: doc.page.width - 100,
-      });
-      doc.moveDown(0.5);
-    }
 
     // Officer Review
     if (review) {
-      doc.moveDown(1.5);
-      doc.fontSize(14).font('Helvetica-Bold').fillColor('#212529').text('Officer Review');
+      // Add on a new page if not enough space
+      if (doc.y > doc.page.height - 160) {
+        doc.addPage();
+        doc.moveDown(0.5);
+      } else {
+        doc.moveDown(1.5);
+      }
+      doc.fontSize(14).font('Helvetica-Bold').fillColor('#212529').text('Officer Review', 50);
       doc.moveDown(0.5);
       const reviewBoxY = doc.y;
-      doc.rect(50, reviewBoxY, doc.page.width - 100, 80).fillAndStroke('#f8f9fa', '#dee2e6');
+      const reviewBoxH = review.comments ? 100 : 80;
+      doc.rect(50, reviewBoxY, doc.page.width - 100, reviewBoxH).fillAndStroke('#f8f9fa', '#dee2e6');
       const decisionColor = review.decision === 'approved' ? '#198754'
         : review.decision === 'rejected' ? '#dc3545' : '#fd7e14';
       doc.fillColor('#212529').fontSize(11).font('Helvetica-Bold')
@@ -256,7 +283,7 @@ function generateReport(data) {
       if (review.comments) {
         doc.text(`Comments: ${review.comments}`, 65, reviewBoxY + 64, { width: doc.page.width - 130 });
       }
-      doc.moveDown(5);
+      doc.y = reviewBoxY + reviewBoxH + 10;
     }
 
     // Footer on each page
