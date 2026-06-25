@@ -74,3 +74,14 @@ CREATE TABLE IF NOT EXISTS audit_log (
   ip_address VARCHAR(45),
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Seed default users (INSERT only if email doesn't exist yet)
+INSERT INTO users (full_name, email, password_hash, role, is_active, failed_login_attempts)
+VALUES
+  ('System Administrator', 'admin@aceas.local',     '$2a$12$3KS1U1HCYHFRBOjJYVfzvOKMDayiEQOq8KOXQoA9VEgzwnnJAIBwu', 'system_admin',       true, 0),
+  ('Compliance Officer',   'officer@aceas.local',   '$2a$12$G.X/ns4m3f0gMWyAt/YmauGZ5M4zFB/OKt93MeL5RwEDFAdYYUm0u', 'compliance_officer', true, 0),
+  ('Demo Developer',       'developer@aceas.local', '$2a$12$ahbOsap0vKrgCX4kT5/tAeCGWsz8szEJjG9r0/8VeNua6z/DoYfDG', 'ai_developer',       true, 0)
+ON CONFLICT (email) DO UPDATE
+  SET failed_login_attempts = 0,
+      locked_until = NULL,
+      is_active = true;
