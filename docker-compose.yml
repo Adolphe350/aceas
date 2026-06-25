@@ -2,15 +2,20 @@ version: '3.8'
 services:
   app:
     build: .
-    ports:
-      - "3000:3000"
+    # No host port binding — Coolify proxy handles external routing.
+    # Remove the ports: block to avoid "port already allocated" errors on redeploy.
+    expose:
+      - "3000"
     environment:
       - NODE_ENV=production
       - DISABLE_OTP=true
+      # Override DATABASE_URL to use Docker service name, not localhost
+      - DATABASE_URL=postgresql://aceas_user:aceas_pass@db:5432/aceas_db
     env_file:
       - .env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
   db:
     image: postgres:15-alpine
     environment:
@@ -20,5 +25,10 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./models/db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aceas_user -d aceas_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 volumes:
   pgdata:
