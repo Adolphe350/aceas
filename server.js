@@ -31,8 +31,21 @@ app.use(helmet({
     },
   },
 }));
+const allowedOrigins = (process.env.ALLOWED_ORIGIN || '').split(',').map(o => o.trim()).filter(Boolean);
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGIN || '*',
+  origin: (origin, callback) => {
+    // Allow same-origin requests (no Origin header) and configured origins
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      return callback(null, origin);
+    }
+    // Fallback: allow any .iraady.com or .kimuse.rw subdomain
+    if (/\.iraady\.com$/.test(origin) || /\.kimuse\.rw$/.test(origin) ||
+        origin === 'https://aceas.iraady.com') {
+      return callback(null, origin);
+    }
+    return callback(null, origin); // allow all for now, but reflect origin not '*'
+  },
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
