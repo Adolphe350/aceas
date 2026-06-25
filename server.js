@@ -53,7 +53,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
 // Static files
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: '5m',  // Short cache for static files (prevents stale JS issues)
+  etag: true,
+}));
 
 // Health check
 app.get('/health', (req, res) => {
