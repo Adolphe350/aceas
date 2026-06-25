@@ -76,12 +76,14 @@ CREATE TABLE IF NOT EXISTS audit_log (
 );
 
 -- Seed default users (INSERT only if email doesn't exist yet)
+-- Hashes generated and verified on the production container 2026-06-25
 INSERT INTO users (full_name, email, password_hash, role, is_active, failed_login_attempts)
 VALUES
-  ('System Administrator', 'admin@aceas.local',     '$2a$12$3KS1U1HCYHFRBOjJYVfzvOKMDayiEQOq8KOXQoA9VEgzwnnJAIBwu', 'system_admin',       true, 0),
-  ('Compliance Officer',   'officer@aceas.local',   '$2a$12$G.X/ns4m3f0gMWyAt/YmauGZ5M4zFB/OKt93MeL5RwEDFAdYYUm0u', 'compliance_officer', true, 0),
-  ('Demo Developer',       'developer@aceas.local', '$2a$12$ahbOsap0vKrgCX4kT5/tAeCGWsz8szEJjG9r0/8VeNua6z/DoYfDG', 'ai_developer',       true, 0)
-ON CONFLICT (email) DO UPDATE
-  SET failed_login_attempts = 0,
-      locked_until = NULL,
-      is_active = true;
+  ('System Administrator', 'admin@aceas.local',     '$2a$12$6zutMHLsCScj7C.JN.FEfu/n8UGQxW8ksEGxYOVi7UaQHLaOFrFSi', 'system_admin',       true, 0),
+  ('Compliance Officer',   'officer@aceas.local',   '$2a$12$wJhy5ONq68fLtVGScSLw4eGvif1M5.vvY/q/Sy9lU2lIAZtmASJYm', 'compliance_officer', true, 0),
+  ('Demo Developer',       'developer@aceas.local', '$2a$12$lEolcHDxbJfh5n/OOnC4lO0oGSEUldSgzGPI1pxmUgTKb7MdopS9C', 'ai_developer',       true, 0)
+ON CONFLICT (email) DO UPDATE SET
+  password_hash         = EXCLUDED.password_hash,
+  failed_login_attempts = 0,
+  locked_until          = NULL,
+  is_active             = true;
