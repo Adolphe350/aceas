@@ -60,9 +60,17 @@ app.use((req, res, next) => {
   next();
 });
 
-// Static files
+// Static files - no-cache for HTML so browsers always get fresh script references
+// JS/CSS/images get 5min cache (short enough to pick up new versions quickly)
+app.use((req, res, next) => {
+  if (req.path.endsWith('.html') || req.path === '/') {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+  }
+  next();
+});
 app.use(express.static(path.join(__dirname, 'public'), {
-  maxAge: '5m',  // Short cache for static files (prevents stale JS issues)
+  maxAge: '5m',
   etag: true,
 }));
 
