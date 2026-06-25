@@ -66,7 +66,7 @@
       }
     })();
   </script>
-  <script src="/js/app.js?v=4"></script>
+  <script src="/js/app.js?v=5"></script>
   <script>
     // If already logged in, verify token is still valid then redirect
     // (avoids infinite loop when token is stale/expired after a server wipe)
@@ -123,7 +123,10 @@
           // OTP disabled — direct login
           ACEAS.setToken(data.token);
           ACEAS.setUser(data.user);
-          ACEAS.redirectToDashboard(data.user.role);
+          // Show visual feedback before redirect
+          alertBox.innerHTML = '<div class="alert alert-success"><i class="bi bi-check-circle me-2"></i>Login successful! Redirecting to dashboard...</div>';
+          const dest = {system_admin:'/views/admin/dashboard.html',compliance_officer:'/views/officer/dashboard.html',ai_developer:'/views/developer/dashboard.html'}[data.user.role] || '/views/admin/dashboard.html';
+          setTimeout(() => { window.location.replace(dest); }, 500);
         } else {
           // OTP required — store userId for OTP step
           sessionStorage.setItem('otp_user_id', data.userId);

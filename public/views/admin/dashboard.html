@@ -231,14 +231,18 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/js/app.js?v=4"></script>
+  <script src="/js/app.js?v=5"></script>
   
   <script>
     const user = ACEAS.requireAuth(['system_admin']); // Admin only
     if (user) {
       ACEAS.populateUserNav();
+      document.getElementById('nav-user-name').textContent = user.fullName || user.email;
       loadUsers();
       loadAdminProjects();
+    } else {
+      // requireAuth already redirects, but add visible fallback
+      document.body.innerHTML = '<div style="padding:2rem;text-align:center"><p>Redirecting to login...</p><a href="/views/login.html">Click here if not redirected</a></div>';
     }
 
     // Load tabs on click
